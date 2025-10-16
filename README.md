@@ -6,6 +6,8 @@
 
 このプロジェクトでは、コンテキストエンジニアリング（Context Engineering）の研究・実験を行い、その体系化と新しいフレームワークの提案・評価を目的としています。
 
+@ai[2025-10-16 00:00] 参考・出典: 提案のインスピレーションは次の動画に基づきます。`https://www.youtube.com/watch?v=PWOJ0QANGsA`
+
 ## 背景・目的
 
 ### コンテキストエンジニアリングとは
@@ -25,7 +27,9 @@ context-engineering/
 ├── docs/                       # ドキュメント
 │   ├── research/               # 研究資料
 │   ├── experiments/            # 実験記録
-│   └── ai-logs/               # AI開発ログ
+│   ├── ai-logs/               # AI開発ログ
+│   ├── engineers/             # 各AIエンジニアの人物設定
+│   └── context-management-flow.md  # コンテキスト管理フロー
 ├── src/                        # ソースコード
 │   ├── frameworks/             # フレームワーク実装
 │   ├── experiments/            # 実験コード
@@ -67,6 +71,30 @@ context-engineering/
 - コメントには `@ai[yyyy-mm-dd hh:mm]` ヘッダーを付与
 - 意図を反映したassertionコードを積極的に記述
 - セクションごとに目的・背景・意図を要約記載
+
+## コンテキスト管理フレームワーク
+
+@ai[2025-10-16 00:00] 目的: AIエージェントの作業で発生するコンテキストの崩壊（具体的情報の欠落や肥大化）に対処し、共有すべきプロジェクト文脈を単一ソースで正確に保つ。
+
+### 基本方針
+- **単一の真実の源（SSOT）**: 管理対象のコンテキストは単一のMarkdown（`docs/project-context.md`）に集約（プロジェクトコンテキスト）。
+- **三役分離**: Reflector / Curator / Updator の3エージェントで役割を分担し、反省→指示→適用を分離。
+- **検証性・可観測性**: Curatorの更新指示はSQLiteに保存し、適用済みフラグで追跡。
+
+### 3つのAIエンジニア
+- **Reflector**: タスク完了や区切りで振り返り、共有すべき新情報、修正・削除候補を抽出して要約。
+- **Curator**: Reflectorの要約を検証し、追加・修正・削除を構造化指示（JSON）に変換してSQLiteへ登録。
+- **Updator**: SQLiteの未適用指示を読み、`docs/project-context.md`を更新し、適用済みにマーキング。
+
+### データ構造（SQLite `db/context_updates.sqlite`）
+- `instructions(id INTEGER PK, op TEXT CHECK(op IN ('add','update','delete')), target_section TEXT, content TEXT, applied INTEGER DEFAULT 0, created_at TEXT)`
+
+### 使い方（フロー）
+1. Reflectorが`docs/engineers/reflector.md`のプロンプトに従い要約を作成。
+2. Curatorが要約を検証し、指示（add/update/delete）を`instructions`に登録。
+3. Updatorが`instructions.applied=0`を順に適用し、`docs/project-context.md`を更新、適用後`applied=1`に設定。
+
+詳細は `docs/context-management-flow.md` を参照。
 
 ## 進捗管理
 
